@@ -479,8 +479,11 @@ body{
 #chat{display:none;flex-direction:column;position:fixed;inset:0;}
 #chat.active{display:flex;}
 #chat > .nav-bar{flex-shrink:0;}
-#chat > .cbg{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:none;}`n.cbg .chat-spacer{flex:1;min-height:0;pointer-events:none;}`n.cbg .chat-sentinel{text-align:center;color:#c7c7cc;font-size:12px;padding:4px 0 6px;flex-shrink:0;letter-spacing:.3px;}
+#chat > .cbg{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:none;}
 #chat > .ibar{flex-shrink:0;width:100%;}
+.dp-head{flex-shrink:0;position:relative;z-index:2;}
+.dp-body{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;position:relative;z-index:2;}
+.dp-body::after{content:'';display:block;min-height:24px;pointer-events:none;}
 html,body{height:100%;height:100dvh;margin:0;padding:0;}
 .screen.active{display:flex;}
 .btn-blue{background:linear-gradient(135deg,var(--theme-accent1),var(--theme-accent2));border:none;color:#fff;padding:16px;border-radius:14px;font-size:17px;font-weight:600;width:100%;cursor:pointer;margin-bottom:10px;}
@@ -540,7 +543,11 @@ textarea.field-input{resize:none;line-height:1.5;}
 .tog.on{background:linear-gradient(135deg,var(--theme-accent1),var(--theme-accent2));}
 .td{width:27px;height:27px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:left .25s;box-shadow:0 2px 5px rgba(0,0,0,.25);}
 .tog.on .td{left:22px;}
-.cbg{min-height:0;-webkit-overflow-scrolling:touch;flex:1;overflow-y:auto;overflow-x:hidden;padding:12px 16px;display:flex;flex-direction:column;gap:6px;background:linear-gradient(160deg,var(--theme-bg),var(--theme-bg2));overscroll-behavior:none;}`n.cbg .chat-spacer{flex:1;min-height:0;pointer-events:none;}`n.cbg .chat-sentinel{text-align:center;color:#c7c7cc;font-size:12px;padding:4px 0 6px;flex-shrink:0;letter-spacing:.3px;}
+.cbg{min-height:0;-webkit-overflow-scrolling:touch;flex:1;overflow-y:auto;overflow-x:hidden;padding:12px 16px;display:flex;flex-direction:column;gap:6px;background:linear-gradient(160deg,var(--theme-bg),var(--theme-bg2));overscroll-behavior:none;}
+.cbg .chat-spacer{flex:1;min-height:0;pointer-events:none;}
+.cbg .chat-sentinel{text-align:center;color:#c7c7cc;font-size:12px;padding:4px 0 6px;flex-shrink:0;letter-spacing:.3px;}
+.nav-bar{box-shadow:0 1px 0 rgba(0,0,0,.02),0 4px 14px -6px rgba(0,0,0,.05);}
+.ibar{box-shadow:0 -1px 0 rgba(0,0,0,.02),0 -4px 14px -6px rgba(0,0,0,.05);}
 .mr{display:flex;flex-direction:column;margin-bottom:2px;}
 .mr.s{align-items:flex-end;}.mr.r{align-items:flex-start;}
 .bub{max-width:72%;padding:10px 14px;border-radius:20px;font-size:16px;line-height:1.45;word-break:break-word;position:relative;}
@@ -1534,26 +1541,27 @@ textarea.field-input{resize:none;line-height:1.5;}
 </div>
 
 <!-- 伪装：天气 -->
-<div id="dweather" class="screen" style="flex-direction:column;overflow-y:auto;position:relative;background:#1a1a2e;">
+<div id="dweather" class="screen" style="flex-direction:column;position:relative;background:#1a1a2e;">
 
   <!-- 动态背景 -->
   <div id="wxBg" style="position:fixed;inset:0;z-index:0;transition:background 1s;background:linear-gradient(180deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%);"></div>
 
-  <!-- 顶部搜索栏 -->
-  <div style="position:relative;z-index:2;padding:max(52px,calc(44px + var(--safe-top))) 16px 0;">
-    <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.12);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.2);border-radius:16px;padding:10px 16px;">
+  <!-- 顶部搜索栏（固定） -->
+  <div class="dp-head" style="padding:max(52px,calc(44px + var(--safe-top))) 16px 10px;">
+    <div class="wx-search">
       <span style="font-size:16px;opacity:.7;">🔍</span>
       <input id="wxSearch" type="text" placeholder="搜索城市..." inputmode="text" autocomplete="off"
-        style="flex:1;border:none;background:transparent;color:#fff;font-size:15px;outline:none;"
         onkeydown="if(event.key==='Enter')weatherSearchSubmit()"
         oninput="if(this.value.length>1)weatherSearchSubmit()">
       <span onclick="wxGetLocation()" style="font-size:18px;cursor:pointer;opacity:.8;" title="定位">📍</span>
     </div>
-    <div id="wxResults" style="margin-top:6px;background:rgba(20,20,40,.97);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);border-radius:14px;overflow:hidden;display:none;max-height:200px;overflow-y:auto;"></div>
+    <div id="wxResults" style="margin-top:6px;background:rgba(20,20,40,.97);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.15);border-radius:16px;overflow:hidden;display:none;max-height:200px;overflow-y:auto;"></div>
   </div>
 
+  <!-- 内容区（可滚动） -->
+  <div class="dp-body">
   <!-- 主天气卡 -->
-  <div style="position:relative;z-index:2;padding:20px 20px 0;text-align:center;">
+  <div style="position:relative;z-index:2;padding:8px 20px 0;text-align:center;">
     <div style="font-size:16px;color:rgba(255,255,255,.7);letter-spacing:.5px;margin-bottom:4px;" id="wxCityName">Dubai</div>
     <div style="font-size:72px;font-weight:200;color:#fff;letter-spacing:-2px;line-height:1;" id="wxTemp">--°</div>
     <div style="font-size:16px;color:rgba(255,255,255,.8);margin:6px 0 4px;" id="wxDescTxt">--</div>
@@ -1606,6 +1614,7 @@ textarea.field-input{resize:none;line-height:1.5;}
     <div id="wxCityList" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch;"></div>
     <button id="wxAddBtn" onclick="addCurrentCity()" style="display:none;margin-top:12px;width:100%;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;padding:12px;border-radius:14px;font-size:14px;cursor:pointer;">+ 加入常驻城市</button>
   </div>
+  </div><!-- /.dp-body -->
 
   <div class="thumb-zone" onclick="tapSecret()" onmousedown="ltS()" onmouseup="ltE()" ontouchstart="ltS()" ontouchend="ltE()"></div>
 </div>
@@ -1662,9 +1671,13 @@ textarea.field-input{resize:none;line-height:1.5;}
 </div>
 
 <!-- 伪装：世界时钟 -->
-<div id="dclk" class="screen" style="background:linear-gradient(160deg,#E8E0FF 0%,#FBE9F0 100%);align-items:center;justify-content:flex-start;flex-direction:column;padding-top:60px;overflow-y:auto;">
-  <div style="font-size:13px;color:#9C93B4;letter-spacing:4px;text-transform:uppercase;margin-bottom:18px;font-family:'Baloo 2',sans-serif;font-weight:700;">🌍 World Clock</div>
-  <div id="worldClockList" style="width:100%;max-width:340px;padding:0 16px 24px;display:flex;flex-direction:column;gap:12px;"></div>
+<div id="dclk" class="screen" style="background:linear-gradient(160deg,#E8E0FF 0%,#FBE9F0 100%);align-items:center;flex-direction:column;">
+  <div class="dp-head" style="width:100%;text-align:center;padding:max(56px,calc(48px + var(--safe-top))) 16px 14px;">
+    <div style="font-size:13px;color:#9C93B4;letter-spacing:4px;text-transform:uppercase;font-family:'Baloo 2',sans-serif;font-weight:700;">🌍 World Clock</div>
+  </div>
+  <div class="dp-body" style="width:100%;display:flex;flex-direction:column;align-items:center;">
+    <div id="worldClockList" style="width:100%;max-width:340px;padding:0 16px 24px;display:flex;flex-direction:column;gap:12px;"></div>
+  </div>
   <div class="thumb-zone" onclick="tapSecret()" onmousedown="ltS()" onmouseup="ltE()" ontouchstart="ltS()" ontouchend="ltE()"></div>
 </div>
 
@@ -1683,7 +1696,7 @@ textarea.field-input{resize:none;line-height:1.5;}
     </div>
   </div>
   <!-- 笔记列表 -->
-  <div id="noteList" style="flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:0;"></div>
+  <div id="noteList" class="dp-body" style="padding:12px 16px;display:flex;flex-direction:column;gap:0;"></div>
   <!-- 笔记编辑器弹层 -->
   <div id="noteEditor" style="position:fixed;inset:0;background:#fff;z-index:600;display:none;flex-direction:column;">
     <div style="background:rgba(242,242,247,0.95);backdrop-filter:blur(20px);border-bottom:0.5px solid rgba(0,0,0,.1);padding:max(48px,calc(40px + var(--safe-top))) 16px 10px;display:flex;align-items:center;gap:12px;flex-shrink:0;">
@@ -1700,36 +1713,36 @@ textarea.field-input{resize:none;line-height:1.5;}
 
 <!-- 二维码弹窗 -->
 <div id="qrModal" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:700;display:none;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:20px;padding:28px 24px;text-align:center;width:280px;">
-    <div style="font-size:18px;font-weight:700;margin-bottom:4px;" id="qrName">My QR Code</div>
+  <div style="background:var(--theme-field-bg,#fff);border-radius:20px;padding:28px 24px;text-align:center;width:280px;box-shadow:0 20px 50px rgba(0,0,0,.25);">
+    <div style="font-size:18px;font-weight:700;margin-bottom:4px;color:var(--theme-text);" id="qrName">My QR Code</div>
     <div style="font-size:13px;color:#8e8e93;margin-bottom:16px;" id="qrIdTxt"></div>
-    <img id="qrImg" style="border-radius:12px;width:200px;height:200px;background:#f2f2f7;" src="">
+    <img id="qrImg" style="border-radius:12px;width:200px;height:200px;background:var(--theme-bg2,#f2f2f7);" src="">
     <div style="font-size:12px;color:#8e8e93;margin-top:12px;">Scan to add me on 备忘录</div>
     <div style="display:flex;gap:8px;margin-top:16px;">
-      <button onclick="document.getElementById('qrModal').style.display='none'" style="flex:1;background:#f2f2f7;border:none;padding:10px 0;border-radius:12px;font-size:16px;cursor:pointer;">Close</button>
-      <button onclick="openScanner()" style="flex:1;background:#007aff;color:#fff;border:none;padding:10px 0;border-radius:12px;font-size:16px;cursor:pointer;">扫一扫</button>
+      <button onclick="document.getElementById('qrModal').style.display='none'" style="flex:1;background:var(--theme-row-bg,#f2f2f7);color:var(--theme-text);border:none;padding:10px 0;border-radius:12px;font-size:16px;cursor:pointer;">Close</button>
+      <button onclick="openScanner()" style="flex:1;background:linear-gradient(135deg,var(--theme-accent1),var(--theme-accent2));color:#fff;border:none;padding:10px 0;border-radius:12px;font-size:16px;cursor:pointer;">扫一扫</button>
     </div>
   </div>
 </div>
 
 <div id="newChatModal" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:700;display:none;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:20px;padding:24px;text-align:center;width:280px;">
-    <div style="font-size:18px;font-weight:700;margin-bottom:4px;">发起新聊天</div>
+  <div style="background:var(--theme-field-bg,#fff);border-radius:20px;padding:24px;text-align:center;width:280px;box-shadow:0 20px 50px rgba(0,0,0,.25);">
+    <div style="font-size:18px;font-weight:700;margin-bottom:4px;color:var(--theme-text);">发起新聊天</div>
     <div style="font-size:13px;color:#8e8e93;margin-bottom:14px;">输入对方的 ID 或昵称</div>
-    <input id="newChatInput" type="text" placeholder="例如: 12 或 张三" autocomplete="off" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:12px;border:1px solid #e5e5ea;font-size:16px;outline:none;" onkeydown="if(event.key==='Enter')submitNewChat()">
+    <input id="newChatInput" type="text" placeholder="例如: 12 或 张三" autocomplete="off" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:12px;border:0.5px solid var(--theme-field-border,#e5e5ea);background:var(--theme-itxt-bg,#fff);color:var(--theme-text);font-size:16px;outline:none;" onkeydown="if(event.key==='Enter')submitNewChat()">
     <div style="display:flex;gap:8px;margin-top:16px;">
-      <button onclick="closeNewChatModal()" style="flex:1;background:#f2f2f7;border:none;padding:10px 0;border-radius:12px;font-size:16px;cursor:pointer;">取消</button>
-      <button onclick="submitNewChat()" style="flex:1;background:#007aff;color:#fff;border:none;padding:10px 0;border-radius:12px;font-size:16px;cursor:pointer;">开始聊天</button>
+      <button onclick="closeNewChatModal()" style="flex:1;background:var(--theme-row-bg,#f2f2f7);color:var(--theme-text);border:none;padding:10px 0;border-radius:12px;font-size:16px;cursor:pointer;">取消</button>
+      <button onclick="submitNewChat()" style="flex:1;background:linear-gradient(135deg,var(--theme-accent1),var(--theme-accent2));color:#fff;border:none;padding:10px 0;border-radius:12px;font-size:16px;cursor:pointer;">开始聊天</button>
     </div>
   </div>
 </div>
 
 <div id="recallModal" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:750;display:none;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:18px;padding:22px;text-align:center;width:220px;">
-    <div style="font-size:17px;font-weight:700;margin-bottom:18px;">撤回？</div>
+  <div style="background:var(--theme-field-bg,#fff);border-radius:18px;padding:22px;text-align:center;width:220px;box-shadow:0 20px 50px rgba(0,0,0,.25);">
+    <div style="font-size:17px;font-weight:700;margin-bottom:18px;color:var(--theme-text);">撤回？</div>
     <div style="display:flex;gap:8px;">
-      <button onclick="closeRecallModal()" style="flex:1;background:#f2f2f7;border:none;padding:10px 0;border-radius:12px;font-size:15px;cursor:pointer;">取消</button>
-      <button onclick="confirmRecall()" style="flex:1;background:linear-gradient(135deg,#ff9a9e,#a18cd1);color:#fff;border:none;padding:10px 0;border-radius:12px;font-size:15px;cursor:pointer;">确定</button>
+      <button onclick="closeRecallModal()" style="flex:1;background:var(--theme-row-bg,#f2f2f7);color:var(--theme-text);border:none;padding:10px 0;border-radius:12px;font-size:15px;cursor:pointer;">取消</button>
+      <button onclick="confirmRecall()" style="flex:1;background:linear-gradient(135deg,var(--theme-accent1),var(--theme-accent2));color:#fff;border:none;padding:10px 0;border-radius:12px;font-size:15px;cursor:pointer;">确定</button>
     </div>
   </div>
 </div>
@@ -1762,10 +1775,10 @@ textarea.field-input{resize:none;line-height:1.5;}
 
 <!-- 推荐名片选择联系人 -->
 <div id="contactPickerModal" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:750;display:none;align-items:flex-end;justify-content:center;">
-  <div style="background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:60vh;overflow:auto;padding:16px;">
-    <div style="font-size:17px;font-weight:700;margin-bottom:8px;text-align:center;">推荐给好友</div>
+  <div style="background:var(--theme-field-bg,#fff);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:60vh;overflow:auto;padding:16px;padding-bottom:calc(16px + var(--safe-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.18);">
+    <div style="font-size:17px;font-weight:700;margin-bottom:8px;text-align:center;color:var(--theme-text);">推荐给好友</div>
     <div id="contactPickerList"></div>
-    <button onclick="document.getElementById('contactPickerModal').style.display='none'" style="margin-top:12px;width:100%;background:#f2f2f7;border:none;padding:10px;border-radius:12px;font-size:16px;cursor:pointer;">取消</button>
+    <button onclick="document.getElementById('contactPickerModal').style.display='none'" style="margin-top:12px;width:100%;background:var(--theme-row-bg,#f2f2f7);color:var(--theme-text);border:none;padding:10px;border-radius:12px;font-size:16px;cursor:pointer;">取消</button>
   </div>
 </div>
 
@@ -1789,56 +1802,56 @@ textarea.field-input{resize:none;line-height:1.5;}
   </div>
 </div>
 
-<!-- ─── 账户恢复叠层（覆盖在伪装界面之上，不暴露 GhostChat 身份）─── -->
-<div id="recovery-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);overflow-y:auto;">
-  <div style="min-height:100%;display:flex;align-items:center;justify-content:center;padding:32px 24px;box-sizing:border-box;">
-    <div style="background:#fff;border-radius:20px;width:100%;max-width:360px;padding:28px 22px 24px;box-sizing:border-box;position:relative;">
-      <button onclick="closeRecoveryOverlay()" style="position:absolute;right:14px;top:14px;background:rgba(0,0,0,0.06);border:none;font-size:16px;color:#636366;cursor:pointer;width:28px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
-      <div style="text-align:center;font-size:28px;margin-bottom:6px;">🔐</div>
-      <div style="text-align:center;font-size:19px;font-weight:700;color:#1c1c1e;margin-bottom:4px;">账户恢复</div>
-      <div style="text-align:center;font-size:13px;color:#8e8e93;margin-bottom:20px;">验证身份后即可重置密码，无需联系客服</div>
-      <div style="display:flex;gap:5px;margin-bottom:18px;background:#f2f2f7;border-radius:10px;padding:3px;">
-        <div id="ro-tab-email" onclick="_roTab('email')" style="flex:1;text-align:center;padding:7px 2px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:#1c1c1e;transition:all .15s;">📧 邮箱</div>
-        <div id="ro-tab-rc" onclick="_roTab('rc')" style="flex:1;text-align:center;padding:7px 2px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:#8e8e93;transition:all .15s;">🔑 救援码</div>
-        <div id="ro-tab-sq" onclick="_roTab('sq')" style="flex:1;text-align:center;padding:7px 2px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:#8e8e93;transition:all .15s;">❓ 安全问题</div>
-      </div>
-      <div id="ro-panel-email">
-        <div style="font-size:13px;color:#8e8e93;margin-bottom:14px;line-height:1.6;text-align:center;">输入注册时绑定的邮箱<br>系统将发送密码重置链接</div>
-        <input id="ro-email-input" type="email" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #e0e0e5;border-radius:10px;font-size:16px;margin-bottom:12px;outline:none;color:#1c1c1e;" placeholder="注册邮箱" autocomplete="email" autocorrect="off" autocapitalize="off" spellcheck="false">
-        <button id="ro-email-btn" onclick="doRoEmail()" style="width:100%;padding:14px;background:linear-gradient(135deg,#ff9a9e,#a18cd1);color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:600;cursor:pointer;">发送重置邮件</button>
-        <div style="font-size:12px;color:#8e8e93;margin-top:10px;text-align:center;">如未收到邮件，请检查垃圾邮件文件夹</div>
-      </div>
-      <div id="ro-panel-rc" style="display:none;">
-        <div id="ro-rc-step1">
-          <div style="font-size:13px;color:#8e8e93;margin-bottom:14px;line-height:1.6;text-align:center;">输入注册时保存的救援码<br>验证通过后立即设置新密码</div>
-          <input id="ro-rc-input" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #e0e0e5;border-radius:10px;font-size:16px;margin-bottom:12px;text-align:center;letter-spacing:3px;outline:none;color:#1c1c1e;" placeholder="XXXX-XXXX-XXXX" maxlength="14" autocomplete="off">
-          <button onclick="doRoRc()" style="width:100%;padding:14px;background:linear-gradient(135deg,#ff9a9e,#a18cd1);color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:600;cursor:pointer;">验证救援码</button>
-        </div>
-        <div id="ro-rc-step2" style="display:none;">
-          <div style="font-size:14px;font-weight:600;color:#34c759;text-align:center;margin-bottom:14px;padding:10px;background:#f0fdf4;border-radius:10px;">✅ 救援码验证通过！</div>
-          <input id="ro-rc-newpin" type="password" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #e0e0e5;border-radius:10px;font-size:18px;margin-bottom:10px;text-align:center;letter-spacing:6px;outline:none;" placeholder="新密码（4-8位）" maxlength="8" inputmode="numeric" autocomplete="new-password">
-          <input id="ro-rc-newpin2" type="password" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #e0e0e5;border-radius:10px;font-size:18px;margin-bottom:12px;text-align:center;letter-spacing:6px;outline:none;" placeholder="确认新密码" maxlength="8" inputmode="numeric" autocomplete="new-password">
-          <button onclick="doRoRcNewPin()" style="width:100%;padding:14px;background:linear-gradient(135deg,#34c759,#30d158);color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:600;cursor:pointer;">设置新密码</button>
-        </div>
-      </div>
-      <div id="ro-panel-sq" style="display:none;">
-        <div id="ro-sq-step1">
-          <div id="ro-sq-q" style="font-size:15px;font-weight:600;color:#1c1c1e;text-align:center;margin-bottom:14px;line-height:1.5;padding:12px;background:#f2f2f7;border-radius:10px;min-height:44px;"></div>
-          <div id="ro-sq-no-q" style="display:none;text-align:center;font-size:13px;color:#ff3b30;margin-bottom:12px;padding:10px;background:#fff1f0;border-radius:8px;">未设置安全问题<br>请前往 账号设置 → 安全问题 设置后再使用</div>
-          <input id="ro-sq-input" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #e0e0e5;border-radius:10px;font-size:16px;margin-bottom:12px;outline:none;color:#1c1c1e;" placeholder="输入你的答案" autocomplete="off">
-          <button id="ro-sq-btn" onclick="doRoSq()" style="width:100%;padding:14px;background:linear-gradient(135deg,#ff9a9e,#a18cd1);color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:600;cursor:pointer;">验证答案</button>
-        </div>
-        <div id="ro-sq-step2" style="display:none;">
-          <div style="font-size:14px;font-weight:600;color:#34c759;text-align:center;margin-bottom:14px;padding:10px;background:#f0fdf4;border-radius:10px;">✅ 答案验证通过！</div>
-          <input id="ro-sq-newpin" type="password" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #e0e0e5;border-radius:10px;font-size:18px;margin-bottom:10px;text-align:center;letter-spacing:6px;outline:none;" placeholder="新密码（4-8位）" maxlength="8" inputmode="numeric" autocomplete="new-password">
-          <input id="ro-sq-newpin2" type="password" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #e0e0e5;border-radius:10px;font-size:18px;margin-bottom:12px;text-align:center;letter-spacing:6px;outline:none;" placeholder="确认新密码" maxlength="8" inputmode="numeric" autocomplete="new-password">
-          <button onclick="doRoSqNewPin()" style="width:100%;padding:14px;background:linear-gradient(135deg,#34c759,#30d158);color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:600;cursor:pointer;">设置新密码</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
+<!-- ─── 账户恢复叠层（覆盖在伪装界面之上，不暴露 GhostChat 身份）─── -->
+<div id="recovery-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);overflow-y:auto;">
+  <div style="min-height:100%;display:flex;align-items:center;justify-content:center;padding:32px 24px;box-sizing:border-box;">
+    <div style="background:#fff;border-radius:20px;width:100%;max-width:360px;padding:28px 22px 24px;box-sizing:border-box;position:relative;">
+      <button onclick="closeRecoveryOverlay()" style="position:absolute;right:14px;top:14px;background:rgba(0,0,0,0.06);border:none;font-size:16px;color:#636366;cursor:pointer;width:28px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;line-height:1;">✕</button>
+      <div style="text-align:center;font-size:28px;margin-bottom:6px;">🔐</div>
+      <div style="text-align:center;font-size:19px;font-weight:700;color:#1c1c1e;margin-bottom:4px;">账户恢复</div>
+      <div style="text-align:center;font-size:13px;color:#8e8e93;margin-bottom:20px;">验证身份后即可重置密码，无需联系客服</div>
+      <div style="display:flex;gap:5px;margin-bottom:18px;background:#f2f2f7;border-radius:10px;padding:3px;">
+        <div id="ro-tab-email" onclick="_roTab('email')" style="flex:1;text-align:center;padding:7px 2px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:#fff;color:#1c1c1e;transition:all .15s;">📧 邮箱</div>
+        <div id="ro-tab-rc" onclick="_roTab('rc')" style="flex:1;text-align:center;padding:7px 2px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:#8e8e93;transition:all .15s;">🔑 救援码</div>
+        <div id="ro-tab-sq" onclick="_roTab('sq')" style="flex:1;text-align:center;padding:7px 2px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:#8e8e93;transition:all .15s;">❓ 安全问题</div>
+      </div>
+      <div id="ro-panel-email">
+        <div style="font-size:13px;color:#8e8e93;margin-bottom:14px;line-height:1.6;text-align:center;">输入注册时绑定的邮箱<br>系统将发送密码重置链接</div>
+        <input id="ro-email-input" type="email" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #e0e0e5;border-radius:10px;font-size:16px;margin-bottom:12px;outline:none;color:#1c1c1e;" placeholder="注册邮箱" autocomplete="email" autocorrect="off" autocapitalize="off" spellcheck="false">
+        <button id="ro-email-btn" onclick="doRoEmail()" style="width:100%;padding:14px;background:linear-gradient(135deg,#ff9a9e,#a18cd1);color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:600;cursor:pointer;">发送重置邮件</button>
+        <div style="font-size:12px;color:#8e8e93;margin-top:10px;text-align:center;">如未收到邮件，请检查垃圾邮件文件夹</div>
+      </div>
+      <div id="ro-panel-rc" style="display:none;">
+        <div id="ro-rc-step1">
+          <div style="font-size:13px;color:#8e8e93;margin-bottom:14px;line-height:1.6;text-align:center;">输入注册时保存的救援码<br>验证通过后立即设置新密码</div>
+          <input id="ro-rc-input" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #e0e0e5;border-radius:10px;font-size:16px;margin-bottom:12px;text-align:center;letter-spacing:3px;outline:none;color:#1c1c1e;" placeholder="XXXX-XXXX-XXXX" maxlength="14" autocomplete="off">
+          <button onclick="doRoRc()" style="width:100%;padding:14px;background:linear-gradient(135deg,#ff9a9e,#a18cd1);color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:600;cursor:pointer;">验证救援码</button>
+        </div>
+        <div id="ro-rc-step2" style="display:none;">
+          <div style="font-size:14px;font-weight:600;color:#34c759;text-align:center;margin-bottom:14px;padding:10px;background:#f0fdf4;border-radius:10px;">✅ 救援码验证通过！</div>
+          <input id="ro-rc-newpin" type="password" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #e0e0e5;border-radius:10px;font-size:18px;margin-bottom:10px;text-align:center;letter-spacing:6px;outline:none;" placeholder="新密码（4-8位）" maxlength="8" inputmode="numeric" autocomplete="new-password">
+          <input id="ro-rc-newpin2" type="password" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #e0e0e5;border-radius:10px;font-size:18px;margin-bottom:12px;text-align:center;letter-spacing:6px;outline:none;" placeholder="确认新密码" maxlength="8" inputmode="numeric" autocomplete="new-password">
+          <button onclick="doRoRcNewPin()" style="width:100%;padding:14px;background:linear-gradient(135deg,#34c759,#30d158);color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:600;cursor:pointer;">设置新密码</button>
+        </div>
+      </div>
+      <div id="ro-panel-sq" style="display:none;">
+        <div id="ro-sq-step1">
+          <div id="ro-sq-q" style="font-size:15px;font-weight:600;color:#1c1c1e;text-align:center;margin-bottom:14px;line-height:1.5;padding:12px;background:#f2f2f7;border-radius:10px;min-height:44px;"></div>
+          <div id="ro-sq-no-q" style="display:none;text-align:center;font-size:13px;color:#ff3b30;margin-bottom:12px;padding:10px;background:#fff1f0;border-radius:8px;">未设置安全问题<br>请前往 账号设置 → 安全问题 设置后再使用</div>
+          <input id="ro-sq-input" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #e0e0e5;border-radius:10px;font-size:16px;margin-bottom:12px;outline:none;color:#1c1c1e;" placeholder="输入你的答案" autocomplete="off">
+          <button id="ro-sq-btn" onclick="doRoSq()" style="width:100%;padding:14px;background:linear-gradient(135deg,#ff9a9e,#a18cd1);color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:600;cursor:pointer;">验证答案</button>
+        </div>
+        <div id="ro-sq-step2" style="display:none;">
+          <div style="font-size:14px;font-weight:600;color:#34c759;text-align:center;margin-bottom:14px;padding:10px;background:#f0fdf4;border-radius:10px;">✅ 答案验证通过！</div>
+          <input id="ro-sq-newpin" type="password" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #e0e0e5;border-radius:10px;font-size:18px;margin-bottom:10px;text-align:center;letter-spacing:6px;outline:none;" placeholder="新密码（4-8位）" maxlength="8" inputmode="numeric" autocomplete="new-password">
+          <input id="ro-sq-newpin2" type="password" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid #e0e0e5;border-radius:10px;font-size:18px;margin-bottom:12px;text-align:center;letter-spacing:6px;outline:none;" placeholder="确认新密码" maxlength="8" inputmode="numeric" autocomplete="new-password">
+          <button onclick="doRoSqNewPin()" style="width:100%;padding:14px;background:linear-gradient(135deg,#34c759,#30d158);color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:600;cursor:pointer;">设置新密码</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- 录音HUD -->
 <div class="rh" id="recHud">
   <div style="font-size:36px;animation:pulse 0.8s infinite;">🎤</div>
