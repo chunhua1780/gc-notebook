@@ -1395,10 +1395,10 @@ textarea.field-input{resize:none;line-height:1.5;}
     <p style="font-size:14px;color:#8e8e93;margin-bottom:20px;line-height:1.6;">App will completely disguise as another app. Only you know how to unlock it.</p>
     <div style="font-size:13px;color:#8e8e93;margin-bottom:12px;text-transform:uppercase;letter-spacing:.3px;">Disguise Shell</div>
     <div class="og">
-      <div class="oc on" id="od-weat" onclick="selD('weather')"><div style="font-size:36px;margin-bottom:8px;">🌤️</div><div style="font-size:14px;font-weight:500;" id="d-wt-name">Weather</div></div>
+      <div class="oc" id="od-weat" onclick="selD('weather')"><div style="font-size:36px;margin-bottom:8px;">🌤️</div><div style="font-size:14px;font-weight:500;" id="d-wt-name">Weather</div></div>
       <div class="oc" id="od-calc" onclick="selD('calculator')"><div style="font-size:36px;margin-bottom:8px;">🧮</div><div style="font-size:14px;font-weight:500;" id="d-calc-name">Calculator</div></div>
       <div class="oc" id="od-cloc" onclick="selD('clock')"><div style="font-size:36px;margin-bottom:8px;">🕐</div><div style="font-size:14px;font-weight:500;" id="d-clk-name">Clock</div></div>
-      <div class="oc" id="od-note" onclick="selD('note')"><div style="font-size:36px;margin-bottom:8px;">📝</div><div style="font-size:14px;font-weight:500;" id="d-note-name">Notes</div></div>
+      <div class="oc on" id="od-note" onclick="selD('note')"><div style="font-size:36px;margin-bottom:8px;">📝</div><div style="font-size:14px;font-weight:500;" id="d-note-name">Notes</div></div>
     </div>
     <div style="font-size:13px;color:#8e8e93;margin-bottom:12px;text-transform:uppercase;letter-spacing:.3px;">Activation Method</div>
     <div class="tr2 on" id="tr-pin" onclick="selT('pin')"><div style="font-size:22px;width:36px;text-align:center;">🔢</div><div><div style="font-size:15px;font-weight:500;">Password activation</div><div style="font-size:12px;color:#8e8e93;margin-top:2px;">Enter password to unlock</div></div></div>
@@ -2409,7 +2409,7 @@ function toggleHideMode(){
   } else {
     // 开启：需要有密码
     if(!lg('appLockPin')&&!confirm('还没有锁屏密码，开启隐藏模式将使用登录密码解锁。\n要继续吗？'))return;
-    var dis=lg('dis')||G.dis||'calculator';
+    var dis=lg('dis')||G.dis||'note';
     G.hide=true;G.dis=dis;ls('hide','true');updHide();
     if(typeof pushSettings==='function')pushSettings();
     initQuickToggles();
@@ -3948,7 +3948,7 @@ ls('myId',myId);
 var G={
   chat:'',msgs:{},
   pin:lg('pin')||'',
-  dis:lg('dis')||'calculator',trig:lg('trig')||'pin',
+  dis:lg('dis')||'note',trig:lg('trig')||'pin',
   hide:lg('hide')==='true',
   dest:lg('dest')||'wrong',dpin:lg('dpin')||'',
   notifSym:lg('notifSym')||'dot',notifTxt:lg('notifTxt')||'sys',
@@ -3957,7 +3957,7 @@ var G={
   recOn:false,recS:0,recI:null,
   callI:null,callS:0,
   pe:'',wrongN:0,
-  selD2:'weather',selT2:'pin',selDest2:'wrong',selN2:'dot',selNT2:'sys'
+  selD2:'note',selT2:'pin',selDest2:'wrong',selN2:'dot',selNT2:'sys'
 };
 
 // ═══ 启动 ═══
@@ -4061,7 +4061,7 @@ function _showStartupStealth(){
   var hideOn=lg('hide')==='true';
   var hasPin=!!lg('appLockPin');
   if(!hideOn&&!hasPin){hideOn=true;}
-  G.hide=hideOn;G.dis=lg('dis')||'calculator';
+  G.hide=hideOn;G.dis=lg('dis')||'note';
   window._gcDisguiseMode=true;
   if(hideOn){
     var dm={weather:'dweather',calculator:'dcalc',clock:'dclk',note:'dnote'};
