@@ -1828,7 +1828,10 @@ textarea.field-input{resize:none;line-height:1.5;}
   <div style="background:rgba(242,242,247,0.95);backdrop-filter:blur(20px);border-bottom:0.5px solid rgba(0,0,0,.1);padding:max(48px,calc(40px + var(--safe-top))) 16px 10px;flex-shrink:0;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
       <div style="font-size:28px;font-weight:700;color:#000;">备忘录</div>
-      <button onclick="noteNew()" style="background:none;border:none;font-size:28px;cursor:pointer;color:#ff9500;padding:0;line-height:1;">⊕</button>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <button onclick="noteNew('checklist')" title="新建清单" style="background:none;border:none;font-size:21px;cursor:pointer;color:#ff9500;padding:0;line-height:1;">☑️</button>
+        <button onclick="noteNew('text')" style="background:none;border:none;font-size:28px;cursor:pointer;color:#ff9500;padding:0;line-height:1;">⊕</button>
+      </div>
     </div>
     <!-- 搜索框 -->
     <div style="background:rgba(118,118,128,.12);border-radius:10px;padding:7px 12px;display:flex;align-items:center;gap:6px;">
@@ -1840,14 +1843,23 @@ textarea.field-input{resize:none;line-height:1.5;}
   <div id="noteList" class="dp-body" style="padding:12px 16px;display:flex;flex-direction:column;gap:0;"></div>
   <!-- 笔记编辑器弹层 -->
   <div id="noteEditor" style="position:fixed;inset:0;background:#fff;z-index:600;display:none;flex-direction:column;">
-    <div style="background:rgba(242,242,247,0.95);backdrop-filter:blur(20px);border-bottom:0.5px solid rgba(0,0,0,.1);padding:max(48px,calc(40px + var(--safe-top))) 16px 10px;display:flex;align-items:center;gap:12px;flex-shrink:0;">
+    <div style="background:rgba(242,242,247,0.95);backdrop-filter:blur(20px);border-bottom:0.5px solid rgba(0,0,0,.1);padding:max(48px,calc(40px + var(--safe-top))) 16px 10px;display:flex;align-items:center;gap:14px;flex-shrink:0;">
       <button onclick="noteSave()" style="background:none;border:none;color:#ff9500;font-size:16px;font-weight:600;cursor:pointer;padding:4px 0;">完成</button>
       <div style="flex:1;"></div>
+      <button onclick="notePinToggle()" id="notePinBtn" title="置顶" style="background:none;border:none;font-size:18px;cursor:pointer;color:#c7c7cc;padding:0;">📌</button>
       <button onclick="noteDelete()" style="background:none;border:none;color:#ff3b30;font-size:14px;cursor:pointer;">删除</button>
     </div>
     <input id="noteTitleInp" placeholder="标题" style="border:none;padding:14px 20px 8px;font-size:20px;font-weight:600;color:#000;outline:none;background:#fff;font-family:inherit;">
     <div style="padding:2px 20px 4px;font-size:12px;color:#8e8e93;" id="noteDateLabel"></div>
     <textarea id="noteBodyInp" placeholder="备忘录" style="flex:1;border:none;padding:8px 20px 24px;font-size:16px;color:#000;outline:none;resize:none;background:#fff;line-height:1.6;font-family:inherit;"></textarea>
+    <!-- 清单模式 -->
+    <div id="noteChecklistWrap" style="display:none;flex:1;overflow-y:auto;padding:4px 12px 16px;">
+      <div id="noteChecklistItems"></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 8px;">
+        <span style="width:22px;height:22px;border-radius:50%;border:1.5px solid #c7c7cc;flex-shrink:0;"></span>
+        <input id="noteChecklistAddInp" placeholder="添加项目" style="flex:1;border:none;outline:none;font-size:16px;color:#000;background:transparent;font-family:inherit;" onkeydown="if(event.key==='Enter')noteChecklistAdd()" onblur="noteChecklistAdd()">
+      </div>
+    </div>
   </div>
   <div class="thumb-zone" onclick="tapSecret()" onmousedown="ltS()" onmouseup="ltE()" ontouchstart="ltS()" ontouchend="ltE()"></div>
 </div>
@@ -9288,69 +9300,138 @@ async function weatherSearchSubmit(){
 
 // ═══ 备忘录 ═══
 var NOTE_KEY='ghostnotes';
-var _noteIdx=-1;
+var _noteIdx=-1,_noteCurType='text',_noteCurItems=[],_notePinned=false;
 function getNotes(){try{return JSON.parse(lg(NOTE_KEY)||'[]');}catch(e){return [];}}
 function saveNotes(arr){ls(NOTE_KEY,JSON.stringify(arr));}
+function _noteSorted(notes){
+  return notes.slice().sort(function(a,b){
+    if(!!a.pinned!==!!b.pinned)return a.pinned?-1:1;
+    return new Date(b.date)-new Date(a.date);
+  });
+}
 function initNotes(){
   var notes=getNotes();
   if(notes.length===0){
     notes=[
-      {id:1,title:'Shopping list',body:'Milk\nEggs\nBread\nApples',date:new Date().toISOString()},
-      {id:2,title:'Meeting notes',body:'Monday 10am\nRoom B\nDiscuss Q3 targets',date:new Date().toISOString()},
-      {id:3,title:'Travel plans',body:'Book flights\nHotel confirmation\nPacking list',date:new Date().toISOString()}
+      {title:'购物清单',type:'checklist',items:[{text:'牛奶',done:false},{text:'鸡蛋',done:false},{text:'面包',done:true},{text:'苹果',done:false}],pinned:true,date:new Date().toISOString()},
+      {title:'会议记录',type:'text',body:'周一 上午10点\n会议室B\n讨论第三季度目标',pinned:false,date:new Date().toISOString()},
+      {title:'旅行计划',type:'text',body:'订机票\n确认酒店\n收拾行李清单',pinned:false,date:new Date().toISOString()}
     ];
     saveNotes(notes);
   }
   renderNotes(notes);
 }
+function _noteChecklistSummary(items){
+  items=items||[];
+  var done=items.filter(function(it){return it.done;}).length;
+  return done+'/'+items.length+' 已完成';
+}
 function renderNotes(notes){
   var box=document.getElementById('noteList');
   if(!box)return;
   if(notes.length===0){box.innerHTML='<div style="text-align:center;padding:60px 0;color:#8e8e93;font-size:15px;">暂无备忘录</div>';return;}
+  var sorted=_noteSorted(notes);
   var colors=['#ffd60a','#30d158','#0a84ff','#ff375f','#bf5af2','#ff9f0a'];
-  box.innerHTML=notes.map(function(n,i){
+  var pinnedShown=false,html='';
+  sorted.forEach(function(n,i){
+    var realIdx=notes.indexOf(n);
+    if(n.pinned&&!pinnedShown){html+='<div style="font-size:12px;color:#8e8e93;font-weight:600;margin:4px 2px 8px;text-transform:uppercase;letter-spacing:.3px;">置顶</div>';pinnedShown=true;}
+    if(!n.pinned&&pinnedShown&&i>0&&sorted[i-1].pinned){html+='<div style="font-size:12px;color:#8e8e93;font-weight:600;margin:16px 2px 8px;text-transform:uppercase;letter-spacing:.3px;">全部备忘录</div>';}
     var d=new Date(n.date);
     var dateStr=d.getMonth()+1+'月'+d.getDate()+'日';
-    var preview=n.body.replace(/\n/g,' ').slice(0,40);
-    return '<div onclick="noteOpen('+i+')" style="background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:2px;cursor:pointer;display:flex;align-items:center;gap:12px;">'
-      +'<div style="width:4px;height:40px;border-radius:2px;background:'+colors[i%colors.length]+';flex-shrink:0;"></div>'
+    var isChecklist=n.type==='checklist';
+    var preview=isChecklist?_noteChecklistSummary(n.items):(n.body||'').replace(/\n/g,' ').slice(0,40);
+    html+='<div onclick="noteOpen('+realIdx+')" style="background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:2px;cursor:pointer;display:flex;align-items:center;gap:12px;">'
+      +'<div style="width:4px;height:40px;border-radius:2px;background:'+colors[realIdx%colors.length]+';flex-shrink:0;"></div>'
       +'<div style="flex:1;overflow:hidden;">'
-      +'<div style="font-size:16px;font-weight:600;color:#000;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(n.title||'无标题')+'</div>'
+      +'<div style="font-size:16px;font-weight:600;color:#000;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+(n.pinned?'📌 ':'')+(isChecklist?'☑️ ':'')+esc(n.title||'无标题')+'</div>'
       +'<div style="font-size:13px;color:#8e8e93;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><span style="color:#000;">'+dateStr+'</span>  '+esc(preview)+'</div>'
       +'</div>'
       +'<div style="color:#c7c7cc;font-size:16px;">›</div>'
       +'</div>';
-  }).join('');
+  });
+  box.innerHTML=html;
 }
 function noteFilter(q){
   var notes=getNotes();
   if(!q){renderNotes(notes);return;}
-  renderNotes(notes.filter(function(n){return (n.title+n.body).toLowerCase().includes(q.toLowerCase());}));
+  q=q.toLowerCase();
+  renderNotes(notes.filter(function(n){
+    var text=n.title+(n.type==='checklist'?(n.items||[]).map(function(it){return it.text;}).join(' '):(n.body||''));
+    return text.toLowerCase().includes(q);
+  }));
 }
+function _noteApplyEditorMode(){
+  var isChecklist=_noteCurType==='checklist';
+  document.getElementById('noteBodyInp').style.display=isChecklist?'none':'block';
+  document.getElementById('noteChecklistWrap').style.display=isChecklist?'flex':'none';
+  document.getElementById('noteChecklistWrap').style.flexDirection='column';
+  if(isChecklist)_noteRenderChecklist();
+}
+function _noteRenderChecklist(){
+  var box=document.getElementById('noteChecklistItems');
+  if(!box)return;
+  box.innerHTML=_noteCurItems.map(function(it,i){
+    return '<div style="display:flex;align-items:center;gap:10px;padding:9px 8px;border-bottom:0.5px solid rgba(0,0,0,.06);">'
+      +'<span onclick="noteChecklistToggle('+i+')" style="width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;'+(it.done?'background:#ff9500;color:#fff;':'border:1.5px solid #c7c7cc;color:transparent;')+'">✓</span>'
+      +'<input value="'+esc(it.text)+'" oninput="noteChecklistEdit('+i+',this.value)" style="flex:1;border:none;outline:none;font-size:16px;background:transparent;font-family:inherit;'+(it.done?'color:#8e8e93;text-decoration:line-through;':'color:#000;')+'">'
+      +'<span onclick="noteChecklistRemove('+i+')" style="color:#c7c7cc;font-size:18px;cursor:pointer;padding:0 2px;">✕</span>'
+      +'</div>';
+  }).join('');
+}
+function noteChecklistToggle(i){if(_noteCurItems[i]){_noteCurItems[i].done=!_noteCurItems[i].done;_noteRenderChecklist();}}
+function noteChecklistEdit(i,v){if(_noteCurItems[i])_noteCurItems[i].text=v;}
+function noteChecklistRemove(i){_noteCurItems.splice(i,1);_noteRenderChecklist();}
+function noteChecklistAdd(){
+  var inp=document.getElementById('noteChecklistAddInp');
+  var v=inp.value.trim();
+  if(!v)return;
+  _noteCurItems.push({text:v,done:false});
+  inp.value='';
+  _noteRenderChecklist();
+  setTimeout(function(){inp.focus();},0);
+}
+function _noteUpdatePinBtn(){
+  var b=document.getElementById('notePinBtn');
+  if(b)b.style.color=_notePinned?'#ff9500':'#c7c7cc';
+}
+function notePinToggle(){_notePinned=!_notePinned;_noteUpdatePinBtn();}
 function noteOpen(i){
   _noteIdx=i;
   var notes=getNotes();
-  var n=notes[i]||{title:'',body:'',date:new Date().toISOString()};
+  var n=notes[i]||{title:'',body:'',type:'text',items:[],date:new Date().toISOString()};
+  _noteCurType=n.type||'text';
+  _noteCurItems=(n.items||[]).map(function(it){return {text:it.text,done:!!it.done};});
+  _notePinned=!!n.pinned;
   document.getElementById('noteTitleInp').value=n.title||'';
   document.getElementById('noteBodyInp').value=n.body||'';
   var d=new Date(n.date);
   document.getElementById('noteDateLabel').textContent=(d.getMonth()+1)+'月'+d.getDate()+'日 '+d.getHours()+':'+('0'+d.getMinutes()).slice(-2);
+  _noteUpdatePinBtn();
+  _noteApplyEditorMode();
   document.getElementById('noteEditor').style.display='flex';
 }
-function noteNew(){
+function noteNew(type){
   _noteIdx=-1;
+  _noteCurType=type==='checklist'?'checklist':'text';
+  _noteCurItems=[];
+  _notePinned=false;
   document.getElementById('noteTitleInp').value='';
   document.getElementById('noteBodyInp').value='';
   document.getElementById('noteDateLabel').textContent='';
+  _noteUpdatePinBtn();
+  _noteApplyEditorMode();
   document.getElementById('noteEditor').style.display='flex';
   setTimeout(function(){document.getElementById('noteTitleInp').focus();},100);
 }
 function noteSave(){
   var notes=getNotes();
   var title=document.getElementById('noteTitleInp').value.trim();
-  var body=document.getElementById('noteBodyInp').value;
-  if(!title&&!body){noteDelete();return;}
-  var entry={title:title,body:body,date:new Date().toISOString()};
+  var isChecklist=_noteCurType==='checklist';
+  var body=isChecklist?'':document.getElementById('noteBodyInp').value;
+  var items=isChecklist?_noteCurItems.filter(function(it){return it.text.trim();}):[];
+  if(!title&&!body&&!items.length){noteDelete();return;}
+  var entry={title:title,type:_noteCurType,body:body,items:items,pinned:_notePinned,date:new Date().toISOString()};
   if(_noteIdx>=0){notes[_noteIdx]=entry;}else{notes.unshift(entry);}
   saveNotes(notes);
   renderNotes(notes);
