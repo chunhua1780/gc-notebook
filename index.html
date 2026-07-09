@@ -9365,6 +9365,8 @@ function _noteApplyEditorMode(){
   document.getElementById('noteBodyInp').style.display=isChecklist?'none':'block';
   document.getElementById('noteChecklistWrap').style.display=isChecklist?'flex':'none';
   document.getElementById('noteChecklistWrap').style.flexDirection='column';
+  document.getElementById('noteChecklistWrap').scrollTop=0;
+  document.getElementById('noteBodyInp').scrollTop=0;
   if(isChecklist)_noteRenderChecklist();
 }
 function _noteRenderChecklist(){
