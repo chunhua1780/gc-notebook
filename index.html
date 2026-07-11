@@ -9510,11 +9510,9 @@ window.addEventListener('load',function(){
     }
     if(typeof window.offHide==='function'){window.offHide=function(){};}
     if(typeof window.toggleHideMode==='function'){window.toggleHideMode=function(){};}
-    // 备忘录皮肤禁止退出登录，防止用户误操作
-    if(typeof window.doLogout==='function'){window.doLogout=function(){return false;};}
-    // 隐藏设置页的退出/注销按钮，以及伪装外壳选择里的其它三个选项（这个App只做备忘录）
+    // 隐藏伪装外壳选择里的其它三个选项（这个App只做备忘录）
     var _nStyle=document.createElement('style');
-    _nStyle.textContent='#set-logout,button[onclick*="doLogout"],#od-weat,#od-calc,#od-cloc{display:none!important}';
+    _nStyle.textContent='#od-weat,#od-calc,#od-cloc{display:none!important}';
     document.head.appendChild(_nStyle);
   }catch(e){}
 },false);
