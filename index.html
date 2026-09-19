@@ -589,7 +589,11 @@ body{
 .dp-head{flex-shrink:0;position:relative;z-index:2;}
 .dp-body{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;position:relative;z-index:2;}
 .dp-body::after{content:'';display:block;min-height:24px;pointer-events:none;}
-html,body{height:100%;height:100dvh;margin:0;padding:0;}
+/* 整个App是一叠position:fixed铺满视口的.screen面板，body自身永远不需要滚动。
+   之前body/html没锁死，背景空白处一拖就触发iOS的橡皮筋回弹，连带把
+   position:fixed的聊天框整个上下拖动/晃动。这里把body也钉成fixed+隐藏溢出，
+   彻底不给它滚动/回弹的机会，滚动只交给各screen内部自己的.scroll/.cbg容器。 */
+html,body{height:100%;height:100dvh;margin:0;padding:0;overflow:hidden;position:fixed;width:100%;overscroll-behavior:none;}
 .screen.active{display:flex;}
 .btn-blue{background:linear-gradient(135deg,var(--theme-accent1),var(--theme-accent2));border:none;color:#fff;padding:16px;border-radius:14px;font-size:17px;font-weight:600;width:100%;cursor:pointer;margin-bottom:10px;}
 .btn-red{background:#ff3b30;border:none;color:#fff;padding:16px;border-radius:14px;font-size:17px;font-weight:600;width:100%;cursor:pointer;}
@@ -651,7 +655,10 @@ textarea.field-input{resize:none;line-height:1.5;}
 .day-pill{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#8e8e93;background:var(--theme-row-bg,#f2f2f7);cursor:pointer;}
 .day-pill.on{background:linear-gradient(135deg,var(--theme-accent1),var(--theme-accent2));color:#fff;}
 .cbg{min-height:0;-webkit-overflow-scrolling:touch;flex:1;overflow-y:auto;overflow-x:hidden;padding:12px 16px;display:flex;flex-direction:column;gap:6px;background:linear-gradient(160deg,var(--theme-bg),var(--theme-bg2));overscroll-behavior:none;}
-.cbg .chat-spacer{flex:1;min-height:0;pointer-events:none;}
+/* 之前flex:1会把spacer撑满所有剩余空间，短对话被硬顶到贴底部，上面留一大片
+   空白——苹果原生Messages对短对话不会这样，就是从导航栏下面自然往下排。
+   改成不参与撑高的固定8px小间距，长对话该怎么滚动完全不受影响。 */
+.cbg .chat-spacer{flex:0 0 auto;height:8px;pointer-events:none;}
 .cbg .chat-sentinel{text-align:center;color:#c7c7cc;font-size:12px;padding:4px 0 6px;flex-shrink:0;letter-spacing:.3px;}
 .nav-bar{box-shadow:0 1px 0 rgba(0,0,0,.02),0 4px 14px -6px rgba(0,0,0,.05);}
 .ibar{box-shadow:0 -1px 0 rgba(0,0,0,.02),0 -4px 14px -6px rgba(0,0,0,.05);}
@@ -824,6 +831,37 @@ textarea.field-input{resize:none;line-height:1.5;}
 </style>
 </head>
 <body>
+
+<!-- ═══ 横屏提示 ═══
+     全部界面都是按手机竖屏写死的固定布局(伪装壳尤其得跟真实原生App一样锁死
+     竖屏)，没有为横屏单独适配。与其让每个屏幕在横屏下挤成一团露怯，不如像
+     很多手机应用一样直接提示"请转回竖屏"——只在真手机横屏(矮而宽)时出现，
+     桌面浏览器的居中"手机框"模式不受影响。 -->
+<style>
+#rotateHint{
+  display:none; position:fixed; inset:0; z-index:999999;
+  background:#0b0b0f; color:#fff;
+  flex-direction:column; align-items:center; justify-content:center; gap:14px;
+  font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
+  text-align:center; padding:0 32px;
+}
+#rotateHint .rh-ic{font-size:44px;animation:rhSpin 1.6s ease-in-out infinite;}
+@keyframes rhSpin{0%,100%{transform:rotate(0deg);}50%{transform:rotate(-90deg);}}
+#rotateHint .rh-t{font-size:16px;font-weight:600;}
+#rotateHint .rh-s{font-size:13px;color:rgba(255,255,255,.55);}
+@media (orientation:landscape) and (max-height:500px) and (max-width:930px){
+  #rotateHint{display:flex;}
+}
+/* JS量出来的实际横屏兜底，见_checkLandscapeHint —— 纯CSS媒体查询在部分设备/
+   浏览器组合下不可靠，这一条独立生效，两条有一条命中提示就会出现。 */
+html.gc-landscape #rotateHint{display:flex;}
+</style>
+<div id="rotateHint" aria-hidden="true">
+  <div class="rh-ic">📱</div>
+  <div class="rh-t" data-i18n="rotateHintTitle">请将设备切换回竖屏</div>
+  <div class="rh-s" data-i18n="rotateHintDesc">此App仅支持竖屏使用</div>
+</div>
+
 
 <!-- ═══ PWA 安装横幅（Android Chrome）═══ -->
 <div id="installBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9990;background:linear-gradient(135deg,#ff9a9e,#a18cd1);color:#fff;padding:14px 16px calc(14px + env(safe-area-inset-bottom));align-items:center;gap:12px;font-family:-apple-system,sans-serif;box-shadow:0 -4px 20px rgba(0,0,0,.15);">
@@ -3541,9 +3579,16 @@ window.addEventListener('beforeinstallprompt', function(e){
   _deferredInstall = e;
   showInstallBanner();
 });
+// 伪装壳/网关页上绝不能露出这条横幅——带👻图标和"安装 XX"文案，跟伪装壳
+// 的品牌完全对不上，一眼就能看出这不是真的原生App，等于自己拆穿伪装。
+function _isDisguiseScreen(){
+  var a=document.querySelector('.screen.active');
+  return !!a && ['dweather','dcalc','dclk','dnote','applock','testgate'].indexOf(a.id)>=0;
+}
 function showInstallBanner(){
   if(localStorage.getItem('installBannerDismissed')) return;
   if(window.navigator.standalone) return;
+  if(_isDisguiseScreen()) return;
   var banner = document.getElementById('installBanner');
   if(banner) banner.style.display = 'flex';
 }
@@ -4195,6 +4240,7 @@ var G={
 // ═══ 启动 ═══
 // 键盘弹出时chat页面高度跟随，其余页面fixed不动
 var _chatKeyboardTimer=null;
+var _prevKbH=0;
 function handleViewportResize(){
   var vv=window.visualViewport;
   var vvh=vv?vv.height:window.innerHeight;
@@ -4202,8 +4248,19 @@ function handleViewportResize(){
   // 只调整chat页，其他页面用fixed inset:0不受键盘影响
   var chatEl=document.getElementById('chat');
   if(chatEl&&chatEl.classList.contains('active')){
-    chatEl.style.height=vvh+'px';
-    chatEl.style.top=vvt+'px';
+    // 键盘高度 = 布局视口(innerHeight，不受地址栏收起/展开影响) 减去 视觉视口。
+    // 之前直接拿 vvh/vvt 的绝对值去设 height/top，地址栏隐藏显示、滚动惯性都会
+    // 让 vvh/vvt 抖动几像素到几十像素，外框跟着这些抖动上下晃动；改成算相对
+    // innerHeight 的键盘高度后，没键盘时这个差值基本恒为0，就不会跟着乱动了。
+    var kbH=Math.max(0,window.innerHeight-vvh-vvt);
+    if(Math.abs(kbH-_prevKbH)<4)return;
+    _prevKbH=kbH;
+    var _h,_t;
+    if(kbH<4){_h='';_t='';} // 没有键盘：清掉内联样式，用CSS默认inset:0，彻底不跟着抖
+    else{_h=vvh+'px';_t=vvt+'px';}
+    if(chatEl.style.height===_h&&chatEl.style.top===_t&&chatEl.style.bottom==='')return;
+    chatEl.style.height=_h;
+    chatEl.style.top=_t;
     chatEl.style.bottom='';
     // 键盘弹出/收起后滚到底，双rAF确保布局稳定后再滚
     if(_chatKeyboardTimer)cancelAnimationFrame(_chatKeyboardTimer);
@@ -4222,13 +4279,32 @@ if(window.visualViewport){
 window.addEventListener('orientationchange',function(){
   setTimeout(handleViewportResize,300);
 });
-// chat页打开时初始化高度
+// 横屏提示：不只靠CSS的(orientation:landscape)媒体查询——manifest里锁了
+// orientation:portrait，部分Android WebView/浏览器组合下这个媒体特性判断
+// 不准(有的锁死后干脆不触发，有的判断跟实际像素尺寸对不上)。这里直接量
+// window.innerWidth/innerHeight的实际比例，双重兜底，哪一层生效都能盖住。
+function _checkLandscapeHint(){
+  try{
+    var w=window.innerWidth, h=window.innerHeight;
+    var isLandscapePhone = w>h && h<=500 && w<=930;
+    document.documentElement.classList.toggle('gc-landscape', isLandscapePhone);
+  }catch(e){}
+}
+window.addEventListener('resize',_checkLandscapeHint);
+window.addEventListener('orientationchange',function(){
+  setTimeout(_checkLandscapeHint,50);
+  setTimeout(_checkLandscapeHint,300);
+});
+if(window.visualViewport)window.visualViewport.addEventListener('resize',_checkLandscapeHint);
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',_checkLandscapeHint);
+else _checkLandscapeHint();
+// chat页打开时初始化高度（此时键盘一般还没弹出，直接清空内联样式走CSS默认inset:0）
 function initChatLayout(){
-  var vv=window.visualViewport;
+  _prevKbH=0;
   var chatEl=document.getElementById('chat');
   if(!chatEl)return;
-  chatEl.style.height=(vv?vv.height:window.innerHeight)+'px';
-  chatEl.style.top=(vv?vv.offsetTop:0)+'px';
+  chatEl.style.height='';
+  chatEl.style.top='';
   chatEl.style.bottom='';
 }
 
