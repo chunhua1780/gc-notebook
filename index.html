@@ -604,8 +604,6 @@ html,body{height:100%;height:100dvh;margin:0;padding:0;overflow:hidden;position:
 .field{background:var(--theme-field-bg);border:0.5px solid var(--theme-field-border);border-radius:12px;padding:14px 16px;color:var(--theme-text);font-size:17px;width:100%;outline:none;margin-bottom:14px;font-family:inherit;}
 .nav-bar{background:var(--theme-navbar);backdrop-filter:blur(20px);border-bottom:0.5px solid var(--theme-border);flex-shrink:0;;position:relative;z-index:10;}
 .nav-lg{padding:max(44px,calc(36px + var(--safe-top))) 20px 10px;}
-/* iOS 主屏幕 App 可视高度比屏幕矮时（见页尾 _gcVpFix），界面往下补齐到真正的屏幕底边 */
-html.gc-vpfix .screen,html.gc-vpfix #chat{bottom:calc(-1 * var(--gc-vp-gap,0px));}
 .nav-lg .t{font-size:34px;font-weight:700;letter-spacing:-.5px;}
 .nav-sm{padding:max(40px,calc(env(safe-area-inset-top,14px) + 8px)) 16px 8px;display:flex;align-items:center;justify-content:space-between;}
 .nav-sm .t{font-size:17px;font-weight:600;}
@@ -3843,7 +3841,7 @@ function setLang(code){
 
 
 // ═══ 核心版本 ═══
-var CORE_VERSION='v2.01';
+var CORE_VERSION='v2.02';
 
 // ═══ 广告系统配置（统一后台广告）═══
 var ADS_CONFIG = {
@@ -9931,11 +9929,12 @@ window.addEventListener('load',function(){
       var ae=document.activeElement;
       var typing=!!ae&&(ae.tagName==='TEXTAREA'||ae.tagName==='INPUT'||ae.isContentEditable);
       if(ios&&!typing){
-        if(gap>=20&&gap<=120){root.style.setProperty('--gc-vp-gap',gap+'px');root.classList.add('gc-vpfix');}
-        else{root.classList.remove('gc-vpfix');root.style.removeProperty('--gc-vp-gap');}
+        // v2.01 曾在这里把界面往下补齐 gap，实测这截区域在 iPhone 上显示不出来，天气底部按钮被推出屏幕、
+        // 没法输入密码，已撤掉；现在只记录诊断数字，不再改布局。
+        root.classList.remove('gc-vpfix');root.style.removeProperty('--gc-vp-gap');
       }
       // 设置页底部版本号后面附上：屏幕高/页面高/底部安全区（补了多少），方便对照截图排查
-      window._gcVpDiag=' · '+full+'/'+ih+'/'+safeBottom()+(root.classList.contains('gc-vpfix')?' +'+gap:'');
+      window._gcVpDiag=' · '+full+'/'+ih+'/'+safeBottom()+(gap?' gap'+gap:'');
       var sv=document.getElementById('settingsVerLabel');
       if(sv&&sv.textContent){sv.textContent=sv.textContent.split(' · ')[0]+window._gcVpDiag;}
       if(window._gcSyncEdgeColor)window._gcSyncEdgeColor();
