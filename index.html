@@ -3779,6 +3779,20 @@ function _buildFontSizeGrid(){
 }
 (function(){var _f=lg('chatFontSize');if(_f&&_f!=='md'){var _s=_FONT_SIZES.filter(function(x){return x.id===_f;})[0];if(_s){var _ce=document.getElementById('chat');if(_ce)_ce.style.setProperty('--chat-font-size',_s.px+'px');}}})();
 function gt(){var d=new Date();return d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();}
+// ═══ 聊天日期分隔条 ═══ 老消息看不出是哪天发的，只有个时间点太模糊，加一条
+// 居中的日期标签插在换天的第一条消息前面（今天的不用加，本来就一目了然）。
+function _dayKey(ts){var d=new Date(ts||Date.now());return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();}
+function _isToday(ts){return _dayKey(ts)===_dayKey(Date.now());}
+function _dayLabel(ts){
+  var d=new Date(ts||Date.now()),n=new Date();
+  var y=d.getFullYear()!==n.getFullYear()?(d.getFullYear()+'年'):'';
+  var yestKey=_dayKey(Date.now()-86400000);
+  if(!y&&_dayKey(ts)===yestKey)return'昨天';
+  return y+(d.getMonth()+1)+'月'+d.getDate()+'日';
+}
+function _dayDividerHtml(ts){
+  return '<div class="chat-daydiv" style="text-align:center;color:#c7c7cc;font-size:calc(12px * var(--ui-font-scale,1));padding:8px 0 4px;letter-spacing:.3px;">'+_dayLabel(ts)+'</div>';
+}
 function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function makeRC(){var c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',s='';for(var i=0;i<12;i++){if(i>0&&i%4===0)s+='-';s+=c[Math.floor(Math.random()*c.length)];}return s;}
 
@@ -7450,10 +7464,17 @@ function renderMsgs(){
   if(!c)return;
   var msgs=G.msgs[G.chat]||[];
   var html='';
+  var _prevDayKey=null;
   for(var i=0;i<msgs.length;i++){
     var m=msgs[i];
     var s=m.sent;
     var b='';
+    // 老消息看不出是哪天发的，换天时插一条居中日期标签，今天的不用加。
+    var _dk=_dayKey(m.ts);
+    if(_dk!==_prevDayKey){
+      if(!_isToday(m.ts))html+=_dayDividerHtml(m.ts);
+      _prevDayKey=_dk;
+    }
     if(m.type==='recalled'){
       html+='<div style="text-align:center;color:#aaa;font-size:12px;margin:6px 0;">'+(s?'你撤回了一条消息':'对方撤回了一条消息')+'</div>';
       continue;
