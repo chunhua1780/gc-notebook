@@ -2199,6 +2199,8 @@ html.gc-landscape #installBanner,html.gc-landscape #huaweiBanner{left:0 !importa
             if(fromId&&typeof openChat==='function'&&typeof myId!=='undefined'&&myId){
               setTimeout(function(){
                 // 确保在主界面
+                // 还在伪装/验证界面（没输密码）时，点通知绝不直接进聊天：记下目标，输完密码再跳
+                if(_gcIsLocked()){_lockReturnScreen='chat:'+fromId;return;}
                 var mainEl=document.getElementById('main');
                 if(!mainEl||!mainEl.classList.contains('active'))show('main');
                 setTimeout(function(){if(typeof _openChatFromId==='function')_openChatFromId(fromId);},300);
@@ -3865,7 +3867,7 @@ function setLang(code){
 
 
 // ═══ 核心版本 ═══
-var CORE_VERSION='v2.09';
+var CORE_VERSION='v2.10';
 
 // ═══ 广告系统配置（统一后台广告）═══
 var ADS_CONFIG = {
@@ -4446,6 +4448,14 @@ function _startMain(){
 // 自由模式不隐身；其他模式切到后台/打开别的程序时直接走冷启动用的那条伪装流程
 // （_showStartupStealth），回来停在伪装界面，必须输入密码才能回到刚才的聊天。
 function _gcStrictStealth(){ try{ return (lg('focusMode')||'free')!=='free'; }catch(e){ return false; } }
+// 非自由模式下"锁上"：清掉本次会话的"已解锁"标记，并标记当前处于伪装/锁定状态。
+// 之后无论页面怎么刷新（自动更新、系统重载），启动时都只会进伪装界面，必须重新输入密码。
+function _gcLockSession(){ window._gcDisguiseMode=true; try{ sessionStorage.removeItem('testGatePassed'); }catch(e){} }
+function _gcIsLocked(){
+  if(window._gcDisguiseMode===true)return true;
+  var a=(document.querySelector('.screen.active')||{}).id||'';
+  return ['dweather','dcalc','dclk','dnote','newsHome','testgate','applock','reg'].indexOf(a)>=0;
+}
 function _gcStealthLeave(){
   try{
     if(!_gcStrictStealth()||!_appWasActive||!lg('registered'))return;
@@ -4572,7 +4582,7 @@ window.onload=async function(){
       if(window._gcDisguiseMode)return;
       var _m=lg('focusMode')||'free';
       var _c=(typeof FOCUS_MODES!=='undefined'&&FOCUS_MODES[_m])||{lock:false};
-      if(!_c.lock||!lg('appLockPin'))sessionStorage.setItem('testGatePassed','1');
+      if(!_c.lock)sessionStorage.setItem('testGatePassed','1'); // 非自由模式绝不自动写"已解锁"（原来没设锁屏密码时会写，刷新后就绕过了密码）
     }
     if(lg('registered')==='true'&&lg('myId')){
       ls('gatePassedPersist','1');
@@ -4591,6 +4601,7 @@ window.onload=async function(){
           if(ok){
             myId=lg('myId')||'';
             ls('gatePassedPersist','1');
+            if(_gcStrictStealth()){ if(!window._gcDisguiseMode)_showStartupStealth(); return; } // 非自由模式：恢复凭证后也先进伪装界面
             sessionStorage.setItem('testGatePassed','1');
             console.log('[Guard] ✅ 凭证已恢复，重进主界面');
             var mainEl=document.getElementById('main');
@@ -8181,6 +8192,7 @@ function proceedStartup(){
 var _lockReturnScreen=null;
 // 统一处理_lockReturnScreen跳转，支持'chat:uid'格式
 function resumeFromLock(){
+  window._gcDisguiseMode=false;
   var target=_lockReturnScreen;
   _lockReturnScreen=null;
   if(!target){proceedStartup();return;}
