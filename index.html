@@ -3988,7 +3988,7 @@ function setLang(code){
 
 
 // ═══ 核心版本 ═══
-var CORE_VERSION='v2.30';
+var CORE_VERSION='v2.31';
 
 // ═══ 广告系统配置（统一后台广告）═══
 var ADS_CONFIG = {
@@ -9313,13 +9313,15 @@ async function loadContacts(){
     var seen={},contactIds=[];
 
     // ── 1. 好友表 ──
-    var fr=await _sb.from('friends').select('friend_id,nickname').eq('user_id',mid);
+    // v2.31：好友表 + 两个会话查询并行跑，别一个个串着等
+    var _lcp=await Promise.all([
+      _sb.from('friends').select('friend_id,nickname').eq('user_id',mid),
+      _sb.from('conversations').select('*').eq('user1',iMid).order('updated_at',{ascending:false}).limit(100),
+      _sb.from('conversations').select('*').eq('user2',iMid).order('updated_at',{ascending:false}).limit(100)
+    ]);
+    var fr=_lcp[0],cq1=_lcp[1],cq2=_lcp[2];
     var friendMap={};
     if(fr.data)fr.data.forEach(function(f){friendMap[String(f.friend_id)]=f.nickname||'';});
-
-    // ── 2. conversations 表（两条查询避开 .or() 兼容问题）──
-    var cq1=await _sb.from('conversations').select('*').eq('user1',iMid).order('updated_at',{ascending:false}).limit(100);
-    var cq2=await _sb.from('conversations').select('*').eq('user2',iMid).order('updated_at',{ascending:false}).limit(100);
     var allConvs=[].concat(cq1.data||[]).concat(cq2.data||[]);
     allConvs.sort(function(a,b){return new Date(b.updated_at)-new Date(a.updated_at);});
     var _convSeen={};
@@ -9408,9 +9410,10 @@ async function loadContacts(){
     }catch(e){}
 
     // ── 6. 保存缓存 + 渲染 ──
-    await _gcFetchPeerReads(contactIds,seen);
+    // v2.31：列表先画出来，已读爪印后台补、拿到再重画一次，不再卡最多 4 秒
     _saveChatListCache(contactIds,seen,friendMap,userMap,avatarMap);
     _renderContacts(contactIds,seen,friendMap,userMap,avatarMap);
+    _gcFetchPeerReads(contactIds,seen).then(function(){try{_saveChatListCache(contactIds,seen,friendMap,userMap,avatarMap);_renderContacts(contactIds,seen,friendMap,userMap,avatarMap);}catch(e){}});
     if(AdManager._ready)AdManager.showInChatList();
   }catch(e){
     console.log('[loadContacts] error:',e&&e.message);
