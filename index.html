@@ -3993,7 +3993,7 @@ function setLang(code){
 
 
 // ═══ 核心版本 ═══
-var CORE_VERSION='v2.34';
+var CORE_VERSION='v2.37';
 
 // ═══ 广告系统配置（统一后台广告）═══
 var ADS_CONFIG = {
@@ -10734,11 +10734,12 @@ G.pe='';
 function openPIN(){
   // 这台设备已经登录过（本地已有有效账号），说明就是机主本人在用手势解锁伪装界面，
   // 直接放行进聊天，不需要再多输一遍密码——避免每次重开App都要过一遍密码墙。
-  if(lg('registered')==='true'&&lg('myId')){
+  // 但仅限"自由模式"：非自由模式（回家/隐身等）下手势只调出密码盘，必须输对密码才进聊天，绝不放行。
+  if(lg('registered')==='true'&&lg('myId')&&(lg('focusMode')||'free')==='free'){
     sessionStorage.setItem('testGatePassed','1');
     ls('gatePassedPersist','1');
     window._gcDisguiseMode=false;
-    _pinSuccessGo();
+    if(!_appWasActive){_renderChatListCache();_startMain();}else{show('main');listenForCalls();listenForAllMessages();}
     return;
   }
   G.pe='';var wh=document.getElementById('wrongHint');if(wh)wh.textContent='';updDots(false);document.getElementById('pinOv').classList.add('on');
