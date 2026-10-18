@@ -3993,7 +3993,7 @@ function setLang(code){
 
 
 // ═══ 核心版本 ═══
-var CORE_VERSION='v2.44';
+var CORE_VERSION='v2.45';
 
 // ═══ 广告系统配置（统一后台广告）═══
 var ADS_CONFIG = {
@@ -8619,7 +8619,7 @@ async function _doSendText(msgObj,chatAtSend,room){
   try{
     // 8秒超时：超时自动标为失败，可触发重试
     var _timeout=new Promise(function(_,rej){
-      _tmr=setTimeout(function(){rej(new Error('send_timeout'));},8000);
+      _tmr=setTimeout(function(){rej(new Error('send_timeout'));},14000);
     });
     var r=await Promise.race([
       _sb.from('messages').insert({
@@ -8654,7 +8654,8 @@ function _markFailed(msgObj,chatAtSend){
 // 网络恢复：重试所有failed消息，保持ts顺序（不移动位置，不改ts）
 var _retrying=false;
 function retryFailedMsgs(){
-  if(_retrying||!myId||!navigator.onLine)return;
+  // 弱网/境外主机时 navigator.onLine 常不可靠，不再用它拦重试；真断网 insert 会自己很快失败。
+  if(_retrying||!myId)return;
   _retrying=true;
   var tasks=[];
   Object.keys(G.msgs||{}).forEach(function(peerId){
@@ -11181,7 +11182,7 @@ window.addEventListener('load',function(){
   }
   window._gcCatchUp=catchUp;
   var lastRetry=0;
-  function retry(){if(Date.now()-lastRetry<15000)return;lastRetry=Date.now();try{if(typeof retryFailedMsgs==='function')retryFailedMsgs();}catch(e){}}
+  function retry(){if(Date.now()-lastRetry<8000)return;lastRetry=Date.now();try{if(typeof retryFailedMsgs==='function')retryFailedMsgs();}catch(e){}}
   function wake(){kick();setTimeout(function(){if(!healthy)resub();catchUp();lastRetry=0;retry();},400);}
   document.addEventListener('visibilitychange',function(){if(!document.hidden)wake();});
   window.addEventListener('online',wake);
