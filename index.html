@@ -164,6 +164,22 @@ if((location.protocol!=='https:'&&location.protocol!=='http:')||location.hostnam
   });
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<script>
+// ═══ 后端线路：国外直连 Supabase(快)，国内走免费的 Cloudflare 桥，App 自动选能通的那条 ═══
+window.GC_SB_DIRECT='https://mztoenhgfuomzrashrqk.supabase.co';
+window.GC_SB_PROXY='https://gcbridge.b777studio.workers.dev';
+(function(){var u;try{u=localStorage.getItem('gcSbUrl');}catch(e){}if(u!==GC_SB_DIRECT&&u!==GC_SB_PROXY)u=GC_SB_DIRECT;window.GC_SB_URL=u;})();
+// 把任意一条线路上的媒体/接口地址，改写成当前这条线路（换线后老链接也能照常打开）
+window._gcSbUrl=function(u){try{if(typeof u!=='string')return u;return u.replace(GC_SB_DIRECT,GC_SB_URL).replace(GC_SB_PROXY,GC_SB_URL);}catch(e){return u;}};
+// 自动选线路：当前线路连不上就换另一条并刷新；在桥上但直连也通(回国外了)就切回直连更快
+(function(){
+  var KEY='sb_publishable_pOM3IfVWYiscQ-cz9vAwvA_F2Ht6zg1';
+  function reachable(base){return new Promise(function(res){var done=false;var t=setTimeout(function(){if(!done){done=true;res(false);}},6000);
+    try{fetch(base+'/rest/v1/',{headers:{apikey:KEY},cache:'no-store'}).then(function(r){if(!done){done=true;clearTimeout(t);res(!!r&&r.status>0&&r.status<500);}},function(){if(!done){done=true;clearTimeout(t);res(false);}});}catch(e){if(!done){done=true;clearTimeout(t);res(false);}}});}
+  function use(url){try{localStorage.setItem('gcSbUrl',url);}catch(e){}try{location.reload();}catch(e){}}
+  setTimeout(function(){(async function(){try{var cur=window.GC_SB_URL||GC_SB_DIRECT;if(!(await reachable(cur))){var other=cur===GC_SB_DIRECT?GC_SB_PROXY:GC_SB_DIRECT;if(await reachable(other))use(other);}else if(cur===GC_SB_PROXY){if(await reachable(GC_SB_DIRECT))use(GC_SB_DIRECT);}}catch(e){}})();},2500);
+})();
+</script>
 <title>备忘录</title>
 
 <!-- ═══ PWA 核心 ═══ -->
@@ -2365,7 +2381,7 @@ html.gc-landscape #installBanner,html.gc-landscape #huaweiBanner{left:0 !importa
 var GC_BASE_URL = location.origin + location.pathname.replace(/[^/]*$/, '');
 var ONESIGNAL_APP_ID = 'ff584e0a-51e5-44a7-9d2c-488262c4faa9';
 var ONESIGNAL_API_KEY = 'os_v2_app_75me4csr4vckphjmjcbg' + 'frh2vhe7itzdumbuvq5tnn5gi4gw6buyz5ng5olfdzdsf6olaljkyu7gyng3o3eqdrkjhvjkix53l6gdwty';
-var PUSH_SERVER = 'https://mztoenhgfuomzrashrqk.supabase.co/functions/v1/push-notify';
+var PUSH_SERVER = (window.GC_SB_URL||'https://mztoenhgfuomzrashrqk.supabase.co')+'/functions/v1/push-notify';
 var VAPID_PUBLIC = 'BFpu-sLy7Z2tINXG041adiyxtKAnJEl0lUlm_RVJjSguhXpgkWu5SMondqhmhFbTeSv9AQs4Z5-WFK0ER9Qrdws';
 
 function urlBase64ToUint8Array(base64String){
@@ -3993,7 +4009,7 @@ function setLang(code){
 
 
 // ═══ 核心版本 ═══
-var CORE_VERSION='v2.47';
+var CORE_VERSION='v2.48';
 
 // ═══ 广告系统配置（统一后台广告）═══
 var ADS_CONFIG = {
@@ -5305,7 +5321,7 @@ async function editAvatar(){
           var fname='avatar_'+myId+'_'+Date.now()+'.jpg';
           var up=await _sb.storage.from('media').upload(fname,blob,{contentType:'image/jpeg',upsert:true});
           if(up.error){alert('上传失败: '+up.error.message);return;}
-          var url='https://mztoenhgfuomzrashrqk.supabase.co/storage/v1/object/public/media/'+fname+'?t='+Date.now();
+          var url=(window.GC_SB_URL||'https://mztoenhgfuomzrashrqk.supabase.co')+'/storage/v1/object/public/media/'+fname+'?t='+Date.now();
           ls('myAvatar','');
           ls('myAvatarUrl',url);
           await _sb.from('users').update({avatar_url:url}).eq('id',parseInt(myId)||myId);
@@ -6668,7 +6684,7 @@ function pickLang(code){
 <script src="./vendor/supabase-js.js"></script>
 <script src="./vendor/jsQR.js" async></script>
 <script>
-var _sb=supabase.createClient('https://mztoenhgfuomzrashrqk.supabase.co','sb_publishable_pOM3IfVWYiscQ-cz9vAwvA_F2Ht6zg1',{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},realtime:{heartbeatIntervalMs:15000,timeout:10000}});
+var _sb=supabase.createClient(window.GC_SB_URL||'https://mztoenhgfuomzrashrqk.supabase.co','sb_publishable_pOM3IfVWYiscQ-cz9vAwvA_F2Ht6zg1',{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},realtime:{heartbeatIntervalMs:15000,timeout:10000}});
 
 // ═══════════════════════════════════════════════════════════
 // 商业广告模块接口（预留空壳，当前不生效，方便以后接入）
@@ -8380,18 +8396,18 @@ function renderMsgs(){
     }
     if(m.type==='image'){
       if(m.loading&&!m.src){b='<div style="width:160px;height:120px;border-radius:10px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:13px;opacity:.8;">📷 处理中...</div>';}
-      else if(m.loading){b='<div style="display:flex;flex-direction:column;gap:4px;"><img class="msg-img" src="'+m.src+'" style="opacity:.6;"><div style="font-size:12px;opacity:.7;">发送中...</div></div>';}
-      else if(m.failed){b='<div style="display:flex;flex-direction:column;gap:4px;"><img class="msg-img" src="'+m.src+'" style="opacity:.5;" onclick="openImgViewer(this.src)"><div style="font-size:12px;color:#ff3b30;">⚠️ 发送失败</div></div>';}
+      else if(m.loading){b='<div style="display:flex;flex-direction:column;gap:4px;"><img class="msg-img" src="'+(window._gcSbUrl?_gcSbUrl(m.src):m.src)+'" style="opacity:.6;"><div style="font-size:12px;opacity:.7;">发送中...</div></div>';}
+      else if(m.failed){b='<div style="display:flex;flex-direction:column;gap:4px;"><img class="msg-img" src="'+(window._gcSbUrl?_gcSbUrl(m.src):m.src)+'" style="opacity:.5;" onclick="openImgViewer(this.src)"><div style="font-size:12px;color:#ff3b30;">⚠️ 发送失败</div></div>';}
       else if(m.src&&m.src.length>4){
-        if(m.thumb&&!m.sent){b='<img class="msg-img" src="'+m.thumb+'" style="filter:blur(3px);transition:filter .3s;" data-full="'+m.src+'" onload="upgradeImg(this)" onclick="openImgViewer(this.dataset.full||this.src)">';}
-        else{b='<img class="msg-img" src="'+m.src+'" onclick="openImgViewer(this.src)">';}
+        if(m.thumb&&!m.sent){b='<img class="msg-img" src="'+m.thumb+'" style="filter:blur(3px);transition:filter .3s;" data-full="'+(window._gcSbUrl?_gcSbUrl(m.src):m.src)+'" onload="upgradeImg(this)" onclick="openImgViewer(this.dataset.full||this.src)">';}
+        else{b='<img class="msg-img" src="'+(window._gcSbUrl?_gcSbUrl(m.src):m.src)+'" onclick="openImgViewer(this.src)">';}
       }
       else{b='<div>📷 Image</div>';}
     }else if(m.type==='voice'){
       if(m.src&&(m.src.startsWith('http')||m.src.startsWith('blob'))){
         var vdur=m.dur||'?';
         var barW=Math.min(120,Math.max(40,parseInt(vdur)*8||40));
-        b='<div onclick="playAudio(this)" data-src="'+m.src+'" style="display:flex;align-items:center;gap:8px;cursor:pointer;min-width:'+(barW+60)+'px;"><span class="play-icon" style="font-size:18px;">▶️</span><div style="flex:1;height:3px;background:rgba(255,255,255,.4);border-radius:2px;min-width:'+barW+'px;"></div><span style="font-size:12px;opacity:.8;">'+vdur+'″</span></div>';
+        b='<div onclick="playAudio(this)" data-src="'+(window._gcSbUrl?_gcSbUrl(m.src):m.src)+'" style="display:flex;align-items:center;gap:8px;cursor:pointer;min-width:'+(barW+60)+'px;"><span class="play-icon" style="font-size:18px;">▶️</span><div style="flex:1;height:3px;background:rgba(255,255,255,.4);border-radius:2px;min-width:'+barW+'px;"></div><span style="font-size:12px;opacity:.8;">'+vdur+'″</span></div>';
       }
     }else if(m.type==='location'){
       var mapUrl=m.mapUrl||('https://maps.google.com/?q='+(m.addr||''));
@@ -8405,7 +8421,7 @@ function renderMsgs(){
     }else if(m.type==='video'){
       if(m.loading){b='<div style="opacity:.6;font-size:13px;">Sending...</div>';}
       else if(m.failed){b='<div style="font-size:12px;color:#ff3b30;">⚠️ 视频发送失败</div>';}
-      else if(m.src){b='<video class="msg-img" src="'+m.src+'" controls style="max-width:220px;border-radius:10px;"></video>';}
+      else if(m.src){b='<video class="msg-img" src="'+(window._gcSbUrl?_gcSbUrl(m.src):m.src)+'" controls style="max-width:220px;border-radius:10px;"></video>';}
       else{b='<div>🎬 Video</div>';}
     }else if(m.type==='file'){
       if(m.loading){b='<div style="opacity:.6;font-size:13px;">📄 '+esc(m.fname||'File')+' (Sending...)</div>';}
@@ -9794,7 +9810,7 @@ async function onImg(e){
       if(G.chat===chatAtSend)renderMsgs();
       return;
     }
-    var url='https://mztoenhgfuomzrashrqk.supabase.co/storage/v1/object/public/media/'+fname;
+    var url=(window.GC_SB_URL||'https://mztoenhgfuomzrashrqk.supabase.co')+'/storage/v1/object/public/media/'+fname;
     var content=prep.thumb?(url+'|'+prep.thumb):url;
     var msgs=G.msgs[chatAtSend]||[];
     for(var i=msgs.length-1;i>=0;i--){
@@ -9839,7 +9855,7 @@ function onVid(e){
       if(G.chat===chatAtSend)renderMsgs();
       return;
     }
-    var url='https://mztoenhgfuomzrashrqk.supabase.co/storage/v1/object/public/media/'+fname;
+    var url=(window.GC_SB_URL||'https://mztoenhgfuomzrashrqk.supabase.co')+'/storage/v1/object/public/media/'+fname;
     try{if(window._gcMediaPut)_gcMediaPut(url,f,localUrl);}catch(_e){}
     for(var i=msgs.length-1;i>=0;i--){
       if(msgs[i].type==='video'&&msgs[i].src===localUrl){msgs[i].src=url;msgs[i].loading=false;break;}
@@ -9909,7 +9925,7 @@ function onFile(e){
       if(G.chat===chatAtSend)renderMsgs();
       return;
     }
-    var url='https://mztoenhgfuomzrashrqk.supabase.co/storage/v1/object/public/media/'+fname;
+    var url=(window.GC_SB_URL||'https://mztoenhgfuomzrashrqk.supabase.co')+'/storage/v1/object/public/media/'+fname;
     try{if(window._gcMediaPut)_gcMediaPut(url,f);}catch(_e){}
     for(var i=msgs.length-1;i>=0;i--){
       if(msgs[i].type==='file'&&msgs[i].fname===origName&&msgs[i].loading){msgs[i].src=url;msgs[i].loading=false;break;}
@@ -9985,7 +10001,7 @@ function recStop(){
         console.log('Upload error:',up.error.message);
         return;
       }
-      var url='https://mztoenhgfuomzrashrqk.supabase.co/storage/v1/object/public/media/'+fname;
+      var url=(window.GC_SB_URL||'https://mztoenhgfuomzrashrqk.supabase.co')+'/storage/v1/object/public/media/'+fname;
       console.log('Uploaded:',url,'inserting to room:',roomAtStop);
       var msgs=G.msgs[chatAtStop]||[];
       for(var i=msgs.length-1;i>=0;i--){
@@ -11988,7 +12004,7 @@ function _gcPickerSkip(){
     busy[u]=1;tries[u]=(tries[u]||0)+1;
     idbGet(u).then(function(b){
       if(b){setObj(u,URL.createObjectURL(b));saved[u]=1;return;}
-      return fetch(u,{cache:'no-store'}).then(function(r){
+      return fetch((window._gcSbUrl?_gcSbUrl(u):u),{cache:'no-store'}).then(function(r){
         if(!r.ok){if(r.status===400||r.status===404)missing[u]=1;return;}
         return r.blob().then(function(bl){
           if(!bl||!bl.size){missing[u]=1;return;}
