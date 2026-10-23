@@ -4009,7 +4009,7 @@ function setLang(code){
 
 
 // ═══ 核心版本 ═══
-var CORE_VERSION='v2.48';
+var CORE_VERSION='v2.49';
 
 // ═══ 广告系统配置（统一后台广告）═══
 var ADS_CONFIG = {
@@ -11206,8 +11206,8 @@ window.addEventListener('load',function(){
   window.addEventListener('pageshow',function(){if(!document.hidden)wake();});
   setInterval(function(){
     if(document.hidden)return;
-    if(!healthy){kick();catchUp();}
-    else if(Date.now()-lastRun>20000)catchUp();
+    if(!healthy)kick();
+    catchUp();  // 保险：不管实时通道是否"健康"都坚持每4秒补收一次——实时偶尔"连着却不推"(如经桥)时也不漏收、不拖慢
     retry();
   },4000);
   // 打开聊天时先把对方的设置拿好，发消息后推送能立刻发出去
