@@ -4009,7 +4009,7 @@ function setLang(code){
 
 
 // ═══ 核心版本 ═══
-var CORE_VERSION='v2.50';
+var CORE_VERSION='v2.51';
 
 // ═══ 广告系统配置（统一后台广告）═══
 var ADS_CONFIG = {
@@ -5801,6 +5801,7 @@ async function pullSettings(){
     var s=r.data&&r.data.settings;
     if(!s||typeof s!=='object'){_settingsPulled=true;return;}
     SYNCED_SETTING_KEYS.forEach(function(k){
+      if(k==='focusMode'||k==='autoSchedEnabled'||k==='autoSchedMode'||k==='autoSchedStart'||k==='autoSchedEnd'||k==='autoSchedDays')return; // 场景模式/定时场景只认本机，绝不被服务器同步覆盖（否则网络抖动下模式会自己乱跳）
       if(s[k]!==undefined&&s[k]!==null&&s[k]!=='')ls(k,s[k]);
     });
     // 同步到内存中的G对象
